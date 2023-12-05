@@ -12,7 +12,7 @@ import pandas as pd
 import requests
 from tqdm import tqdm
 
-from keepa.query_keys import DEAL_REQUEST_KEYS, PRODUCT_REQUEST_KEYS
+from query_keys import DEAL_REQUEST_KEYS, PRODUCT_REQUEST_KEYS, LIGHTNING_DEAL_REQUEST_KEYS
 
 
 def is_documented_by(original):
@@ -2558,6 +2558,132 @@ class Keepa:
         }
 
         return self._request("deal", payload, wait=wait)["deals"]
+
+
+    def lightning_deals(self, deal_parms, domain="US", wait=True) -> dict:
+        """Query the Keepa API for product deals.
+
+        This request provides access to all current and upcoming lightning deals. You can request a specific lightning
+        deal by specifying an ASIN (token cost 1) or get the complete list (token cost 500). Our lightning deals
+        information is updated every 10 minutes. This request does not provide access to any other deal types - only
+        lightning deals.
+        The complete list will include all lightning deals of the past 4 days, currently active ones, and all upcoming
+        ones (up to 24 hours before start time).
+        https://keepa.com/#!deals
+
+        For more details please visit:
+        https://discuss.keepa.com/t/lightning-deals-request/9708
+
+        Parameters
+        ----------
+        asin : str, optional
+            The ASIN of the lightning deal you want to request. If not specified, the whole list will be provided.
+
+        domain : str, optional
+            One of the following Amazon domains: RESERVED, US, GB, DE,
+            FR, JP, CA, CN, IT, ES, IN, MX Defaults to US.
+
+        wait : bool, optional
+            Wait available token before doing effective query, Defaults to ``True``.
+
+        Returns
+        -------
+        dict
+            Dictionary containing the deals including the following keys:
+
+            * ``'lightningDeals'`` - array of all the lightning deals objects matching your query.
+
+            Lightning Deal object
+            {
+                "domainId": Integer,
+                "lastUpdate": Integer,
+                "asin": String,
+                "title": String,
+                "sellerId": String,
+                "sellerName": String,
+                "dealId": String,
+                "dealPrice": Integer,
+                "currentPrice": Integer,
+                "image": String,
+                "isPrimeEligible": Boolean,
+                "isFulfilledByAmazon": Boolean,
+                "isMAP": Boolean,
+                "rating": Integer,
+                "totalReviews": Integer,
+                "dealState": String,
+                "startTime": Integer,
+                "endTime": Integer,
+                "percentClaimed": Integer,
+                "percentOff": Integer,
+                "variation": Object array
+            }
+
+        Examples
+        --------
+        Return deals from category 16310101 using the synchronous
+        ``keepa.Keepa`` class
+
+        >>> import keepa
+        >>> key = "<REAL_KEEPA_KEY>"
+        >>> api = keepa.Keepa(key)
+        >>> deal_parms = {
+        ...     "page": 0,
+        ...     "domainId": 1,
+        ...     "excludeCategories": [1064954, 11091801],
+        ...     "includeCategories": [16310101],
+        ... }
+        >>> deals = api.deals(deal_parms)
+
+        Get the title of the first deal.
+
+        >>> deals["dr"][0]["title"]
+        'Orange Cream Rooibos, Tea Bags - Vanilla, Orange | Caffeine-Free,
+        Antioxidant-rich, Hot & Iced | The Spice Hut, First Sip Of Tea'
+
+        Conduct the same query with the asynchronous ``keepa.AsyncKeepa``
+        class.
+
+        >>> import asyncio
+        >>> import keepa
+        >>> deal_parms = {
+        ...     "page": 0,
+        ...     "domainId": 1,
+        ...     "excludeCategories": [1064954, 11091801],
+        ...     "includeCategories": [16310101],
+        ... }
+        >>> async def main():
+        ...     key = "<REAL_KEEPA_KEY>"
+        ...     api = await keepa.AsyncKeepa().create(key)
+        ...     categories = await api.search_for_categories("movies")
+        ...     return await api.deals(deal_parms)
+        ...
+        >>> asins = asyncio.run(main())
+        >>> asins
+        ['B0BF3P5XZS',
+         'B08JQN5VDT',
+         'B09SP8JPPK',
+         '0999296345',
+         'B07HPG684T',
+         '1984825577',
+        ...
+
+        """
+        # verify valid keys
+        for key in deal_parms:
+            if key not in LIGHTNING_DEAL_REQUEST_KEYS:
+                raise ValueError(f'Invalid key "{key}"')
+
+            # verify json type
+            key_type = LIGHTNING_DEAL_REQUEST_KEYS[key]
+            deal_parms[key] = key_type(deal_parms[key])
+
+        payload = {
+            "key": self.accesskey,
+            "domain": DCODES.index(domain),
+            "selection": json.dumps(deal_parms),
+        }
+
+        return self._request("lightningdeal", payload, wait=wait)
 
     def _request(self, request_type, payload, wait=True, raw_response=False):
         """Query keepa api server.

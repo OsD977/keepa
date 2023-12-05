@@ -30,6 +30,11 @@ DEAL_REQUEST_KEYS = {
     "hasAmazonOffer": bool,
 }
 
+LIGHTNING_DEAL_REQUEST_KEYS = {
+    "domainId": int,
+    "asin": str
+}
+
 
 PRODUCT_REQUEST_KEYS = {
     "author": list,
