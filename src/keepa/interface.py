@@ -12,7 +12,7 @@ import pandas as pd
 import requests
 from tqdm import tqdm
 
-from query_keys import DEAL_REQUEST_KEYS, PRODUCT_REQUEST_KEYS, LIGHTNING_DEAL_REQUEST_KEYS
+from keepa.query_keys import DEAL_REQUEST_KEYS, PRODUCT_REQUEST_KEYS, LIGHTNING_DEAL_REQUEST_KEYS
 
 
 def is_documented_by(original):
